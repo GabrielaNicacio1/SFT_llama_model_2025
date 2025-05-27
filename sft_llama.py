@@ -1,6 +1,6 @@
 
 #find a dataset to download and use SFT to learn it
-#unsupervised fine tuning
+#supervised fine tuning
 import transformers
 import torch
 
