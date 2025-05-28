@@ -5,6 +5,12 @@
 # Use a pipeline as a high-level helper
 from transformers import pipeline
 
+#dataset from hugging face to SFT on (diseases and symptoms)
+from datasets import load_dataset
+
+ds = load_dataset("QuyenAnhDE/Diseases_Symptoms")
+
+
 pipe = pipeline("text-generation", model="MBZUAI/MobiLlama-05B", trust_remote_code=True)
 
 # Load model directly
