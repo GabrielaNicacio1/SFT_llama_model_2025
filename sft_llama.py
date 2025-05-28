@@ -54,6 +54,36 @@ def compute_metrics(p):
     return {"accuracy": accuracy.compute(predictions = predictions, references = labels)}
 
 
+#define training args
+training_args = TrainingArguments(
+  output_dir = "./results", 
+  per_device_train_batch_size = 4,
+  num_train_epochs = 4,
+  logging_steps = 10,
+  save_steps = 20,
+  save_total_limit = 2,
+  optim = "paged_adamw_8bit",
+  learning_rate = 2e-5,
+)
+
+trainer = Trainer(
+  model = model,
+  args = training_args,
+  train_dataset = tokenized_dataset,
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 while True:
