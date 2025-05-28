@@ -1,28 +1,19 @@
 
 #find a dataset to download and use SFT to learn it
 #supervised fine tuning
-import transformers
-import torch
 
-model_id = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+# Use a pipeline as a high-level helper
+from transformers import pipeline
 
-pipeline = transformers.pipeline(
-    "text-generation",
-    model=model_id,
-    model_kwargs={"torch_dtype": torch.bfloat16},
-    device_map="auto",
-)
+pipe = pipeline("text-generation", model="MBZUAI/MobiLlama-05B", trust_remote_code=True)
 
-messages = [
-    {"role": "system", "content": "You are a pirate chatbot who always responds in pirate speak!"},
-    {"role": "user", "content": "Who are you?"},
-]
+# Load model directly
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
-outputs = pipeline(
-    messages,
-    max_new_tokens=256,
-)
-print(outputs[0]["generated_text"][-1])
+tokenizer = AutoTokenizer.from_pretrained("MBZUAI/MobiLlama-05B", trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained("MBZUAI/MobiLlama-05B", trust_remote_code=True)
+
+
 
 while True:
   user_input = input("You: ")
