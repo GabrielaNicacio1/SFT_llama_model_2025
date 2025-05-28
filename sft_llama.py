@@ -2,19 +2,21 @@
 #find a dataset to download and use SFT to learn it
 
 # Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForLanguageModeling, Trainer, TrainingArguments, pipeline
+import os
+from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, pipeline, default_data_collator #DataCollatorForLanguageModeling
 import torch
 import numpy as np
 import evaluate
-
+from datasets import load_dataset
 
 model_name = "MBZUAI/MobiLlama-05B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=False) #cant use flash attention and prob dont need cuz for speed --set to FALSE instead
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=False)
 
+if(tokenizer.pad_token is None):
+   tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+   model.resize_token_embeddings(len(tokenizer))
 #dataset from hugging face to SFT on (diseases and symptoms)
-from datasets import load_dataset
-
 ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
 
 #need to convert to format model can use in prompt-response
@@ -24,45 +26,24 @@ def format_ds(example):
   treatments = example["Treatments"]
 
   prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {symptoms}"
-  response = f"{disease}. {treatments}"
+  response = f"{example[disease]}. {example[treatments]}"
 
   return {"text": prompt + " " + response} #train model on that full text   
 
-dataset = ds.map(format_ds)
-
-"""model.to('cuda')
-text = "I was walking towards the river when "
-input_ids = tokenizer(text, return_tensors="pt").to('cuda').input_ids
-outputs = model.generate(input_ids, max_length=1000, repetition_penalty=1.2, pad_token_id=tokenizer.eos_token_id)
-print(tokenizer.batch_decode(outputs[:, input_ids.shape[1]:-1])[0].strip())"""
-
-
+#dataset = ds.map(format_ds)
 
 #for tokenizing dataset
 def tokenize_function(examples):
     return tokenizer(examples["text"], padding = "max_length", truncation = True)
 
-if(tokenizer.pad_token is None):
-   tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-   model.resize_token_embeddings(len(tokenizer))
-  
-tokenized_dataset = dataset.map(tokenize_function, batched = True)
+tokenized_dataset = ds.map(tokenize_function, remove_columns= ds['train'].column_names) #batched = True)
 
 #create data collator
-data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
+data_collator = default_data_collator#DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
 
 
 #import accuracy eval metric
 #DONT NEED??????????????
-'''accuracy = evaluate.load("accuracy")
-
-#define eval func to pass to trainer later
-def compute_metrics(p):
-    predictions, labels = p
-    predictions = np.argmax(predictions, axis = 1)
-
-    return {"accuracy": accuracy.compute(predictions = predictions, references = labels)}
-'''
 
 #define training args
 training_args = TrainingArguments(
@@ -81,9 +62,9 @@ training_args = TrainingArguments(
 trainer = Trainer(
   model = model,
   args = training_args,
-  train_dataset = tokenized_dataset,
+  train_dataset = tokenized_dataset['train'],
   tokenizer = tokenizer,
-  data_collator = data_collator
+  data_collator = default_data_collator
 )
 
 trainer.train()
@@ -102,7 +83,7 @@ while True:
   if (user_input.lower() == "exit"): #keep chatting until user says exit
     break
   #this will be the chat prompt that gets prepended to the user input about symptoms so that this is the format it expects (start out formal)
-  chat_prompt = "Find the disease and recommended treatments given the symptoms of a particular disease: {user_input}\n"
+  chat_prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {user_input}\n"
   inputs = tokenizer(chat_prompt, return_tensors = "pt").to(device)
 
   with torch.no_grad():
