@@ -76,7 +76,7 @@ training_args = TrainingArguments(
   #optim = "adamw_torch",
   learning_rate = 2e-5,
   fp16 = False, #not using GPU...
-  evaluation_strategy = "no", #no eval during training needed??
+  evaluation_strategy = "no" #no eval during training needed??
 )
 
 trainer = Trainer(
@@ -84,7 +84,7 @@ trainer = Trainer(
   args = training_args,
   train_dataset = tokenized_dataset,
   tokenizer = tokenizer,
-  data_collator = data_collator,
+  data_collator = data_collator
 )
 
 trainer.train()
@@ -102,8 +102,19 @@ while True:
   chat_prompt = "Find the disease and recommended treatments given the symptoms of a particular disease: {user_input}\n"
   inputs = tokenizer(chat_prompt, return_tensors = "pt").to(device)
 
+  with torch.no_grad():
+     outputs = model.generate(
+        **inputs,
+        max_length = 512, #max length of the generated response
+        #early_stopping = True, #stop when we reach the end of the sentence
+        temperature = 0.7, #how random response is but really should be cuz just matching to data
+        top_k = 50, #top k sampling ???
+        top_p = 0.95, #top p sampling ???
+        pad_token_id = tokenizer.eos_token_id #pad token id to use
+     )
+
   #chat prompt has recent exchanges and prompt to help generate response all in one string tho
-  response = generator(chat_prompt, max_length = max_length, temperature = temperature, truncation = True)[0]['generated_text'] #set higher max length ??
+  response = tokenizer.decode(outputs[0], skip_special_tokens = True)
   #response has recent exchanges+ its response so need to strip the first part for just the answer
   answer = response[len(chat_prompt):].strip().split("\n")[0]
   
