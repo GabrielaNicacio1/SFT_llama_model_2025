@@ -2,7 +2,7 @@
 #find a dataset to download and use SFT to learn it
 
 # Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorWithPadding)
 import torch
 
 model_name = "MBZUAI/MobiLlama-05B"
@@ -30,6 +30,14 @@ def tokenize_function(examples):
 
 tokenized_dataset = ds.map(tokenize_function, batched = True)
 
+if(tokenizer.pad_token is None):
+   tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+   model.resize_token_embeddings(len(tokenizer))
+  
+tokenized_dataset = dataset.map(tokenize_function, batched = True)
+
+#create data collator
+date_collator = DataCollatorWithPadding(tokenizer = tokenizer)
 
 
 
