@@ -72,6 +72,12 @@ trainer = Trainer(
   train_dataset = tokenized_dataset,
 )
 
+trainer.train()
+
+model.save_pretrained("./custom_finetuned_model")
+tokenizer.save_pretrained("./custom_finetuned_model")
+
+
 
 
 
