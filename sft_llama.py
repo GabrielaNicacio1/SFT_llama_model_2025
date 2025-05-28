@@ -17,7 +17,16 @@ from datasets import load_dataset
 
 ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
 
+#need to convert to format model can use in prompt-response
+def format_ds(example):
+  symptoms = example["Symptoms"]
+  disease = example["Name"]
+  treatments = example["Treatments"]
 
+  prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {symptoms}"
+  response = f"{name}. {treatments}"
+
+  return {"text": prompt + " " + response} #train model on that full text   
 
 """model.to('cuda')
 text = "I was walking towards the river when "
