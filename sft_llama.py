@@ -26,8 +26,23 @@ def format_ds(example):
   treatments = example["Treatments"]
 
   prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {symptoms}"
-  response = f"{example[disease]}. {example[treatments]}"
+  response = f"You might have {example['disease']}. The treatments are: {example['treatments']}"
 
+  #learning part i think
+  #tokenzize seperately, turns each string into list of token ids
+  prompt_ids = tokenizer(prompt, add_special_tokens=False).input_ids #wont add special tokens
+  response_ids = tokenizer(response, add_special_tokens=True).input_ids # to add special tokens like EOS if model expects it
+  #so will look like an array of ints
+  #concatenate the prompt and response ids now
+  input_ids = prompt_ids + response_ids # full thing
+  labels = [-100] * len(prompt_ids) + response_ids #-100 is used to ignore the prompt part during training, only train on response
+  
+  max_length = 512 # need to set for max input length (should be way less tho)
+  #pad the input ids and labels to max length or else truncate if too long
+  input_ids = input_ids[:max_length] + [tokenizer.pad_token_id] * max(0, max_length - len(input_ids))
+  labels = labels[:max_length] + [-100] * max(0, max_length - len(labels)) #pad with -100 to ignore prompt part
+  #attention mask tells which tokens are real and which are padding when it attends to them
+  attention_mask = [1 if i != tokenizer.pad_token_id else 0 for i in input_ids] #1 for real tokens, 0 for padding
   return {"text": prompt + " " + response} #train model on that full text   
 
 #dataset = ds.map(format_ds)
