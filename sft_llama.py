@@ -43,7 +43,8 @@ def format_ds(example):
   labels = labels[:max_length] + [-100] * max(0, max_length - len(labels)) #pad with -100 to ignore prompt part
   #attention mask tells which tokens are real and which are padding when it attends to them
   attention_mask = [1 if i != tokenizer.pad_token_id else 0 for i in input_ids] #1 for real tokens, 0 for padding
-  return {"text": prompt + " " + response} #train model on that full text   
+  #return dictionary with all these fields that TRAINER will use
+  return {'input_ids': input_ids, 'attention_mask': attention_mask, 'labels': labels}   
 
 #dataset = ds.map(format_ds)
 
