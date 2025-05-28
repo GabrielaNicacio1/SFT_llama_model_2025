@@ -2,7 +2,7 @@
 #find a dataset to download and use SFT to learn it
 
 # Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorWithPadding, Trainer, TrainingArguments
+from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 import torch
 import numpy as np
 import evaluate
@@ -24,7 +24,7 @@ def format_ds(example):
   treatments = example["Treatments"]
 
   prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {symptoms}"
-  response = f"{name}. {treatments}"
+  response = f"{disease}. {treatments}"
 
   return {"text": prompt + " " + response} #train model on that full text   
 
@@ -49,11 +49,12 @@ if(tokenizer.pad_token is None):
 tokenized_dataset = dataset.map(tokenize_function, batched = True)
 
 #create data collator
-date_collator = DataCollatorWithPadding(tokenizer = tokenizer)
+date_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
 
 
 #import accuracy eval metric
-accuracy = evaluate.load("accuracy")
+#DONT NEED??????????????
+'''accuracy = evaluate.load("accuracy")
 
 #define eval func to pass to trainer later
 def compute_metrics(p):
@@ -61,7 +62,7 @@ def compute_metrics(p):
     predictions = np.argmax(predictions, axis = 1)
 
     return {"accuracy": accuracy.compute(predictions = predictions, references = labels)}
-
+'''
 
 #define training args
 training_args = TrainingArguments(
