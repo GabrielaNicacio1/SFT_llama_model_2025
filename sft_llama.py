@@ -2,7 +2,7 @@
 #find a dataset to download and use SFT to learn it
 
 # Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForLanguageModeling, Trainer, TrainingArguments
+from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorForLanguageModeling, Trainer, TrainingArguments, pipeline
 import torch
 import numpy as np
 import evaluate
@@ -12,6 +12,7 @@ model_name = "MBZUAI/MobiLlama-05B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
+#Sgenerator = pipeline("text-generation", model = model, tokenizer=tokenizer)
 #dataset from hugging face to SFT on (diseases and symptoms)
 from datasets import load_dataset
 
@@ -49,7 +50,7 @@ if(tokenizer.pad_token is None):
 tokenized_dataset = dataset.map(tokenize_function, batched = True)
 
 #create data collator
-date_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
+data_collator = DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
 
 
 #import accuracy eval metric
@@ -66,31 +67,36 @@ def compute_metrics(p):
 
 #define training args
 training_args = TrainingArguments(
-  output_dir = "./results", 
-  per_device_train_batch_size = 4,
-  num_train_epochs = 4,
+  output_dir = "./results", #results folder will be created during process with steps saved
+  per_device_train_batch_size = 2,
+  num_train_epochs = 3,
   logging_steps = 10,
-  save_steps = 20,
-  save_total_limit = 2,
-  optim = "adamw_torch",
+  save_steps = 50,
+  save_total_limit = 1,
+  #optim = "adamw_torch",
   learning_rate = 2e-5,
+  fp16 = False, #not using GPU...
+  evaluation_strategy = "no", #no eval during training needed??
 )
 
 trainer = Trainer(
   model = model,
   args = training_args,
   train_dataset = tokenized_dataset,
+  tokenizer = tokenizer,
+  data_collator = data_collator,
 )
 
 trainer.train()
 
+#dir will be created when training ends and has model and tokenizer stuff
 model.save_pretrained("./custom_finetuned_model")
 tokenizer.save_pretrained("./custom_finetuned_model")
 
 
 
 
-
+'''
 while True:
   user_input = input("You: ")
   if (user_input.lower() == "exit"): #keep chatting until user says exit
@@ -108,4 +114,4 @@ while True:
   answer = response[len(chat_prompt):].strip().split("\n")[0]
   
   print("Chatbot: ", answer)
-  recent_exchanges.append(f"Chatbot: {answer}")
+  recent_exchanges.append(f"Chatbot: {answer}")'''
