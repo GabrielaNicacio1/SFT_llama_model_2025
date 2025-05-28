@@ -93,6 +93,10 @@ trainer.train()
 model.save_pretrained("./custom_finetuned_model")
 tokenizer.save_pretrained("./custom_finetuned_model")
 
+#load model..
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device) #move model to device
+model.eval() #eval mode
 
 while True:
   user_input = input("You: ")
