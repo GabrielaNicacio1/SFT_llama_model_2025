@@ -4,6 +4,9 @@
 # Load model directly
 from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorWithPadding)
 import torch
+import numpy as np
+import evaluate
+
 
 model_name = "MBZUAI/MobiLlama-05B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
@@ -40,6 +43,15 @@ tokenized_dataset = dataset.map(tokenize_function, batched = True)
 date_collator = DataCollatorWithPadding(tokenizer = tokenizer)
 
 
+#import accuracy eval metric
+accuracy = evaluate.load("accuracy")
+
+#define eval func to pass to trainer later
+def compute_metrics(p):
+    predictions, labels = p
+    predictions = np.argmax(predictions, axis = 1)
+
+    return {"accuracy": accuracy.compute(predictions = predictions, references = labels)}
 
 
 
