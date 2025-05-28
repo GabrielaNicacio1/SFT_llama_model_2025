@@ -2,7 +2,7 @@
 #find a dataset to download and use SFT to learn it
 
 # Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorWithPadding)
+from transformers import AutoTokenizer, AutoModelForCausalLM, DataCollatorWithPadding, Trainer, TrainingArguments
 import torch
 import numpy as np
 import evaluate
@@ -28,6 +28,8 @@ def format_ds(example):
 
   return {"text": prompt + " " + response} #train model on that full text   
 
+dataset = ds.map(format_ds)
+
 """model.to('cuda')
 text = "I was walking towards the river when "
 input_ids = tokenizer(text, return_tensors="pt").to('cuda').input_ids
@@ -39,8 +41,6 @@ print(tokenizer.batch_decode(outputs[:, input_ids.shape[1]:-1])[0].strip())"""
 #for tokenizing dataset
 def tokenize_function(examples):
     return tokenizer(examples["text"], padding = "max_length", truncation = True)
-
-tokenized_dataset = ds.map(tokenize_function, batched = True)
 
 if(tokenizer.pad_token is None):
    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -71,7 +71,7 @@ training_args = TrainingArguments(
   logging_steps = 10,
   save_steps = 20,
   save_total_limit = 2,
-  optim = "paged_adamw_8bit",
+  optim = "adamw_torch",
   learning_rate = 2e-5,
 )
 
@@ -85,17 +85,6 @@ trainer.train()
 
 model.save_pretrained("./custom_finetuned_model")
 tokenizer.save_pretrained("./custom_finetuned_model")
-
-
-
-
-
-
-
-
-
-
-
 
 
 
