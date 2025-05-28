@@ -22,6 +22,20 @@ input_ids = tokenizer(text, return_tensors="pt").to('cuda').input_ids
 outputs = model.generate(input_ids, max_length=1000, repetition_penalty=1.2, pad_token_id=tokenizer.eos_token_id)
 print(tokenizer.batch_decode(outputs[:, input_ids.shape[1]:-1])[0].strip())"""
 
+
+
+#for tokenizing dataset
+def tokenize_function(examples):
+    return tokenizer(examples["text"], padding = "max_length", truncation = True)
+
+tokenized_dataset = ds.map(tokenize_function, batched = True)
+
+
+
+
+
+
+
 while True:
   user_input = input("You: ")
   if (user_input.lower() == "exit"): #keep chatting until user says exit
