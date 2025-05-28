@@ -94,19 +94,13 @@ model.save_pretrained("./custom_finetuned_model")
 tokenizer.save_pretrained("./custom_finetuned_model")
 
 
-
-
-'''
 while True:
   user_input = input("You: ")
   if (user_input.lower() == "exit"): #keep chatting until user says exit
     break
-  #add their response to array of history
-  recent_exchanges.append(f"You: {user_input}")
-  recent_exchanges = recent_exchanges[-3:] #keep most recent 3
-  chat_prompt = "\n".join(recent_exchanges) + "\nChatbot:"
-  #storing in array should look like this 
-  #{You: Hello, Chatbot: Hi I'm a chatbot!, You: Bye}
+  #this will be the chat prompt that gets prepended to the user input about symptoms so that this is the format it expects (start out formal)
+  chat_prompt = "Find the disease and recommended treatments given the symptoms of a particular disease: {user_input}\n"
+  inputs = tokenizer(chat_prompt, return_tensors = "pt").to(device)
 
   #chat prompt has recent exchanges and prompt to help generate response all in one string tho
   response = generator(chat_prompt, max_length = max_length, temperature = temperature, truncation = True)[0]['generated_text'] #set higher max length ??
@@ -114,4 +108,3 @@ while True:
   answer = response[len(chat_prompt):].strip().split("\n")[0]
   
   print("Chatbot: ", answer)
-  recent_exchanges.append(f"Chatbot: {answer}")'''
