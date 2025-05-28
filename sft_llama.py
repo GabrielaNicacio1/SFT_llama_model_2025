@@ -1,25 +1,26 @@
 
 #find a dataset to download and use SFT to learn it
-#supervised fine tuning
 
-# Use a pipeline as a high-level helper
-from transformers import pipeline
+# Load model directly
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
+
+model_name = "MBZUAI/MobiLlama-05B"
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
 #dataset from hugging face to SFT on (diseases and symptoms)
 from datasets import load_dataset
 
-ds = load_dataset("QuyenAnhDE/Diseases_Symptoms")
+ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
 
 
-pipe = pipeline("text-generation", model="MBZUAI/MobiLlama-05B", trust_remote_code=True)
 
-# Load model directly
-from transformers import AutoTokenizer, AutoModelForCausalLM
-
-tokenizer = AutoTokenizer.from_pretrained("MBZUAI/MobiLlama-05B", trust_remote_code=True)
-model = AutoModelForCausalLM.from_pretrained("MBZUAI/MobiLlama-05B", trust_remote_code=True)
-
-
+"""model.to('cuda')
+text = "I was walking towards the river when "
+input_ids = tokenizer(text, return_tensors="pt").to('cuda').input_ids
+outputs = model.generate(input_ids, max_length=1000, repetition_penalty=1.2, pad_token_id=tokenizer.eos_token_id)
+print(tokenizer.batch_decode(outputs[:, input_ids.shape[1]:-1])[0].strip())"""
 
 while True:
   user_input = input("You: ")
