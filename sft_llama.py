@@ -12,7 +12,6 @@ model_name = "MBZUAI/MobiLlama-05B"
 tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=False) #cant use flash attention and prob dont need cuz for speed --set to FALSE instead
 model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=False)
 
-#Sgenerator = pipeline("text-generation", model = model, tokenizer=tokenizer)
 #dataset from hugging face to SFT on (diseases and symptoms)
 from datasets import load_dataset
 
