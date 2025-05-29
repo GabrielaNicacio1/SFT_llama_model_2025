@@ -1,5 +1,25 @@
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
-#find a dataset to download and use SFT to learn it
+#try whole new model cuz other had too many issues
+model_id = "meta-llama/Llama-3.2-1B"
+
+#Load tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+model = AutoModelForCausalLM.from_pretrained(model_id)
+
+pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+#try first this
+prompt = "List symptoms of the flu and how to treat it."
+result = pipe(prompt, max_new_tokens=100, do_sample=True)
+
+print(result[0]['generated_text'])
+
+
+
+
+
+"""#find a dataset to download and use SFT to learn it
 
 # Load model directly
 import os
@@ -118,3 +138,5 @@ while True:
   answer = response[len(chat_prompt):].strip().split("\n")[0]
   
   print("Chatbot: ", answer)
+
+  """
