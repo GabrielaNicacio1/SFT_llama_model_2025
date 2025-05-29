@@ -10,8 +10,8 @@ import evaluate
 from datasets import load_dataset
 
 model_name = "MBZUAI/MobiLlama-05B"
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=False) #cant use flash attention and prob dont need cuz for speed --set to FALSE instead
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=False)
+tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True) #cant use flash attention and prob dont need cuz for speed --set to FALSE instead
+model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
 if(tokenizer.pad_token is None):
    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
@@ -21,9 +21,9 @@ ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
 
 #need to convert to format model can use in prompt-response
 def format_ds(example):
-  symptoms = example["Symptoms"]
-  disease = example["Name"]
-  treatments = example["Treatments"]
+  symptoms = example["symptoms"]
+  disease = example["name"]
+  treatments = example["treatments"]
 
   prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {symptoms}"
   response = f"You might have {example['disease']}. The treatments are: {example['treatments']}"
@@ -46,13 +46,12 @@ def format_ds(example):
   #return dictionary with all these fields that TRAINER will use
   return {'input_ids': input_ids, 'attention_mask': attention_mask, 'labels': labels}   
 
-#dataset = ds.map(format_ds)
+dataset = ds.map(format_ds)
 
 #for tokenizing dataset
-def tokenize_function(examples):
-    return tokenizer(examples["text"], padding = "max_length", truncation = True)
-
-tokenized_dataset = ds.map(tokenize_function, remove_columns= ds['train'].column_names) #batched = True)
+#def tokenize_function(examples):
+   # return tokenizer(examples["text"], padding = "max_length", truncation = True)
+tokenized_dataset = dataset.map(format_ds) #batched = True)
 
 #create data collator
 data_collator = default_data_collator#DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
@@ -70,7 +69,7 @@ training_args = TrainingArguments(
   save_steps = 50,
   save_total_limit = 1,
   #optim = "adamw_torch",
-  learning_rate = 2e-5,
+  learning_rate = 1e-5,
   fp16 = False, #not using GPU...
   evaluation_strategy = "no" #no eval during training needed??
 )
@@ -105,7 +104,7 @@ while True:
   with torch.no_grad():
      outputs = model.generate(
         **inputs,
-        max_length = 512, #max length of the generated response
+        max_length = 150, #max length of the generated response
         #early_stopping = True, #stop when we reach the end of the sentence
         temperature = 0.7, #how random response is but really should be cuz just matching to data
         top_k = 50, #top k sampling ???
