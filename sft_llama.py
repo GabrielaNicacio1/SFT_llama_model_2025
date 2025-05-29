@@ -1,8 +1,11 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, pipeline, default_data_collator #DataCollatorForLanguageModeling
+from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, pipeline, default_data_collator #DataCollatorForLanguageModeling
 import torch
 #import numpy as np
 #import evaluate
 from datasets import load_dataset
+
+import os
+os.environ["WANDB_DISABLED"] = "true" #disable wandb logging to avoid errors
 
 #try whole new model cuz other had too many issues
 model_name = "meta-llama/Llama-3.2-1B"
@@ -37,12 +40,12 @@ if(tokenizer.pad_token is None):
 
 #need to convert to format model can use in prompt-response
 def format_ds(example):
-  symptoms = example["symptoms"]
-  disease = example["name"]
-  treatments = example["treatments"]
+  Symptoms = example["Symptoms"]
+  Disease = example["Name"]
+  Treatments = example["Treatments"]
 
-  prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {symptoms}"
-  response = f"You might have {example['disease']}. The treatments are: {example['treatments']}"
+  prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {Symptoms}"
+  response = f"You might have {example['Name']}. The treatments are: {example['Treatments']}"
 
   #learning part i think
   #tokenzize seperately, turns each string into list of token ids
@@ -63,12 +66,12 @@ def format_ds(example):
   return {'input_ids': input_ids, 'attention_mask': attention_mask,
           'labels': labels}   
 
-dataset = ds.map(format_ds)
+#dataset = ds.map(format_ds)
 
 #for tokenizing dataset
 #def tokenize_function(examples):
    # return tokenizer(examples["text"], padding = "max_length", truncation = True)
-tokenized_dataset = dataset.map(format_ds) #batched = True)
+tokenized_dataset = ds.map(format_ds) #batched = True)
 
 #create data collator
 data_collator = default_data_collator#DataCollatorForLanguageModeling(tokenizer = tokenizer, mlm = False)
@@ -88,9 +91,9 @@ training_args = TrainingArguments(
   #optim = "adamw_torch",
   learning_rate = 1e-5,
   fp16 = False, #not using GPU...
-  evaluation_strategy = "no" #no eval during training needed??
+  #evaluation_strategy = "no" #no eval during training needed?? wouldn't be recognized by transformer module
 )
-
+#print("TrainingArguments works.")
 trainer = Trainer(
   model = model,
   args = training_args,
