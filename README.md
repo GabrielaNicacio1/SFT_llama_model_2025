@@ -1,12 +1,14 @@
 # SFT_llama_model_2025
 Using SFT to learn new data set with a version of llama from Hugging Face.
-Install transformers module.
+
+Using a dataset on diseases and symptoms. 400 rows in a csv.
+Currently, was not able to test it, it got stuck at "Training" 0%.
+
 
 
 
 Difference between supervised fine tuning and unsupervised fine tuning:
 Supervised FT is when a model is trained on a certain chosen dataset so that the model becomes good at a specific task, whereas Unsupervised FT is when the model is trained on a large set of unlabeled data, just learning what it can.
-
 
 
 Supervised FT is a process the model is additionally trained on a chosen dataset of input-output pairs. For the model to learn, x is the input/prompt, and y is the output/response desired. Before getting y, the model predicts what it should be and then compares the correct output with its own, adjusting its parameters to get closer to the desired response.
