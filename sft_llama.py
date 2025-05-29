@@ -6,7 +6,10 @@ from datasets import load_dataset
 
 import os
 os.environ["WANDB_DISABLED"] = "true" #disable wandb logging to avoid errors
-os.environ["CUDA_VISIBLE_DEVICES"] = ""  #forces CPU use only...really slow
+
+print("CUDA available:", torch.cuda.is_available())
+print("GPU name:", torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None")
+
 
 #try whole new model cuz other had too many issues
 model_name = "meta-llama/Llama-3.2-1B"
@@ -17,6 +20,9 @@ ds["train"] = ds["train"].select(range(100))  # start w/ 100 samples
 #Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
+#load model..
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device) #move model to device
 
 #pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
@@ -94,7 +100,7 @@ training_args = TrainingArguments(
   #optim = "adamw_torch",
   save_strategy= "no", #no saving during training, for now
   learning_rate = 1e-5,
-  fp16 = False, #not using GPU...
+  fp16 = True, # using GPU...
   #evaluation_strategy = "no" #no eval during training needed?? wouldn't be recognized by transformer module
 )
 #print("TrainingArguments works.")
@@ -112,9 +118,7 @@ trainer.train()
 model.save_pretrained("./custom_finetuned_model")
 tokenizer.save_pretrained("./custom_finetuned_model")
 
-#load model..
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device) #move model to device
+
 model.eval() #eval mode
 
 while True:
