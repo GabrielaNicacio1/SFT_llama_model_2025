@@ -6,11 +6,13 @@ from datasets import load_dataset
 
 import os
 os.environ["WANDB_DISABLED"] = "true" #disable wandb logging to avoid errors
+os.environ["CUDA_VISIBLE_DEVICES"] = ""  #forces CPU use only...really slow
 
 #try whole new model cuz other had too many issues
 model_name = "meta-llama/Llama-3.2-1B"
 #dataset from hugging face to SFT on (diseases and symptoms)
 ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
+ds["train"] = ds["train"].select(range(100))  # start w/ 100 samples
 
 #Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -83,12 +85,14 @@ data_collator = default_data_collator#DataCollatorForLanguageModeling(tokenizer 
 #define training args
 training_args = TrainingArguments(
   output_dir = "./results", #results folder will be created during process with steps saved
-  per_device_train_batch_size = 2,
-  num_train_epochs = 3,
+  per_device_train_batch_size = 1,
+  gradient_accumulation_steps=4, #to have larger batch sizes, dont run out of mem so easily
+  num_train_epochs = 1,
   logging_steps = 10,
-  save_steps = 50,
-  save_total_limit = 1,
+  #save_steps = 50,
+  #save_total_limit = 1,
   #optim = "adamw_torch",
+  save_strategy= "none", #no saving during training, for now
   learning_rate = 1e-5,
   fp16 = False, #not using GPU...
   #evaluation_strategy = "no" #no eval during training needed?? wouldn't be recognized by transformer module
