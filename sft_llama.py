@@ -1,43 +1,39 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
-
-#try whole new model cuz other had too many issues
-model_id = "meta-llama/Llama-3.2-1B"
-
-#Load tokenizer and model
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(model_id)
-
-pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
-
-#try first this
-prompt = "List symptoms of the flu and how to treat it."
-result = pipe(prompt, max_new_tokens=100, do_sample=True)
-
-print(result[0]['generated_text'])
-
-
-
-
-
-"""#find a dataset to download and use SFT to learn it
-
-# Load model directly
-import os
 from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, pipeline, default_data_collator #DataCollatorForLanguageModeling
 import torch
-import numpy as np
-import evaluate
+#import numpy as np
+#import evaluate
 from datasets import load_dataset
 
-model_name = "MBZUAI/MobiLlama-05B"
-tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True) #cant use flash attention and prob dont need cuz for speed --set to FALSE instead
-model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
+#try whole new model cuz other had too many issues
+model_name = "meta-llama/Llama-3.2-1B"
+#dataset from hugging face to SFT on (diseases and symptoms)
+ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
+
+#Load tokenizer and model
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
+
+#pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
+
+#try first this
+#prompt = "List symptoms of the flu and how to treat it."
+#to speed things up, limit output length
+'''output = pipe(
+     "List symptoms of the flu and how to treat it.",
+    max_new_tokens=80,        # Limit output length
+    do_sample=False          #faster on CPU
+    temperature = 0.6
+    )
+
+print(output[0]['generated_text'])
+'''
+
+#tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True) #cant use flash attention and prob dont need cuz for speed --set to FALSE instead
+#model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True)
 
 if(tokenizer.pad_token is None):
    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
    model.resize_token_embeddings(len(tokenizer))
-#dataset from hugging face to SFT on (diseases and symptoms)
-ds = load_dataset("QuyenAnhDE/Diseases_Symptoms") #400 rows
 
 #need to convert to format model can use in prompt-response
 def format_ds(example):
@@ -64,7 +60,8 @@ def format_ds(example):
   #attention mask tells which tokens are real and which are padding when it attends to them
   attention_mask = [1 if i != tokenizer.pad_token_id else 0 for i in input_ids] #1 for real tokens, 0 for padding
   #return dictionary with all these fields that TRAINER will use
-  return {'input_ids': input_ids, 'attention_mask': attention_mask, 'labels': labels}   
+  return {'input_ids': input_ids, 'attention_mask': attention_mask,
+          'labels': labels}   
 
 dataset = ds.map(format_ds)
 
@@ -138,5 +135,3 @@ while True:
   answer = response[len(chat_prompt):].strip().split("\n")[0]
   
   print("Chatbot: ", answer)
-
-  """
