@@ -2,9 +2,15 @@
 Using SFT to learn new data set with a version of llama from Hugging Face.
 
 Using a dataset on diseases and symptoms. 400 rows in a csv.
-Currently, was not able to test it, it got stuck at "Training" 0%.
 
 
+HOW TO USE THE MODEL:
+
+You must have access to the llama3.2 1B Instruct repository
+Use your hugging face token to run the model
+Ask the chatbot what disease and treaments based on your given symptoms
+
+I've been having trouble with formulating the right prompts to output a simply structured response.
 
 
 Difference between supervised fine tuning and unsupervised fine tuning:
