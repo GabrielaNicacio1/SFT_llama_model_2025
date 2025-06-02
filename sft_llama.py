@@ -2,13 +2,14 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments, Trainer, default_data_collator
 import torch
 from datasets import Dataset
-from huggingface_hub import notebook_login
+from huggingface_hub import login
 import os
 import pandas as pd
 from peft import LoraConfig, get_peft_model, TaskType
+from datasets import DatasetDict
 
-
-notebook_login()
+#notebook_login()
+login(token = 
 os.environ["WANDB_DISABLED"] = "true" #disable wandb logging dont use
 
 #try whole new model cuz other had too many issues
@@ -22,10 +23,8 @@ model = AutoModelForCausalLM.from_pretrained(model_name)
 df = pd.read_csv("hf://datasets/QuyenAnhDE/Diseases_Symptoms/Diseases_Symptoms.csv")
 ds = Dataset.from_pandas(df)
 # Wrap the single dataset as a DatasetDict with a 'train' split
-from datasets import DatasetDict
+
 ds = DatasetDict({"train": ds})
-
-
 ds["train"] = ds["train"].select(range(400))  # start w/ 100 samples
 
 if(tokenizer.pad_token is None):
@@ -38,8 +37,9 @@ def format_ds(example):
   Disease = example["Name"]
   Treatments = example["Treatments"]
 
-  prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {Symptoms}"
-  response = f"You might have {example['Name']}. The treatments are: {example['Treatments']}"
+  prompt =  f"Find the disease and recommended treatments after being given the symptoms of a particular disease: {Symptoms}"
+  response = f"Disease: {Disease}\nTreatments: {Treatments}"
+#You might have {example['Name']}. The treatments are: {example['Treatments']}"
 
   #learning part i think
   #tokenzize seperately, turns each string into list of token ids
@@ -50,7 +50,7 @@ def format_ds(example):
   input_ids = prompt_ids + response_ids # full thing
   labels = [-100] * len(prompt_ids) + response_ids #-100 is used to ignore the prompt part during training, only train on response
 
-  max_length = 200 # need to set for max input length (should be way less tho)
+  max_length = 200 # need to set for max input length (should be way less tho?)
   #pad the input ids and labels to max length or else truncate if too long
   input_ids = input_ids[:max_length] + [tokenizer.pad_token_id] * max(0, max_length - len(input_ids))
   labels = labels[:max_length] + [-100] * max(0, max_length - len(labels)) #pad with -100 to ignore prompt part
@@ -65,6 +65,7 @@ def format_ds(example):
 #for tokenizing dataset
 tokenized_dataset = ds.map(format_ds) #batched = True)
 
+#to reduce gpu and mem use, and make faster
 lora_config = LoraConfig(
     task_type=TaskType.CAUSAL_LM,
     r=8,
@@ -112,23 +113,27 @@ while True:
   if (user_input.lower() == "exit"): #keep chatting until user says exit
     break
   #this will be the chat prompt that gets prepended to the user input about symptoms so that this is the format it expects (start out formal)
-  chat_prompt = f"Find the disease and recommended treatments given the symptoms of a particular disease: {user_input}\n"
+  chat_prompt = f"Find the disease and recommended treatments after being given the symptoms of a particular disease: {user_input}"
   inputs = tokenizer(chat_prompt, return_tensors = "pt").to(device)
 
   with torch.no_grad():
      outputs = peft_model_train.generate(
         **inputs,
-        max_length = 400, #max length of the generated response
+        max_length = 1064, #max length of the generated response
         #early_stopping = True, #stop when we reach the end of the sentence
-        temperature = 0.7, #how random response is but really should be cuz just matching to data
-        top_k = 50, #top k sampling ???
+        #temperature = 0.1, #how random response is but should be 0 cuz need accuracy
+        #top_k = 1, #pick highest probability token
+        #top_p = 0.3, #include all prob??
+        temperature = 0.5, #how random response is but really should be cuz just matching to data
+        top_k = 30, #top k sampling ???
         top_p = 0.95, #top p sampling ???
+        #do_sample = False, # for accuracy over creativity
         pad_token_id = tokenizer.eos_token_id #pad token id to use
      )
 
   #chat prompt has recent exchanges and prompt to help generate response all in one string tho
   response = tokenizer.decode(outputs[0], skip_special_tokens = True)
   #response has recent exchanges+ its response so need to strip the first part for just the answer
-  answer = response[len(chat_prompt):].strip().split("\n")[0]
+  answer = response[len(chat_prompt):].strip()#.split("\n")[0]
 
   print("Chatbot: ", answer)
