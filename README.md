@@ -13,6 +13,8 @@ Ask the chatbot what disease and treaments based on your given symptoms
 I've been having trouble with formulating the right prompts to output a simply structured response.
 
 
+SFT AND USFT:
+
 Difference between supervised fine tuning and unsupervised fine tuning:
 Supervised FT is when a model is trained on a certain chosen dataset so that the model becomes good at a specific task, whereas Unsupervised FT is when the model is trained on a large set of unlabeled data, just learning what it can.
 
