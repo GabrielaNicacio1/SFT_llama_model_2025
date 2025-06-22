@@ -12,7 +12,7 @@ from datasets import DatasetDict
 import json
 
 #notebook_login()
-login(token = "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")
+login(token =
 os.environ["WANDB_DISABLED"] = "true" #disable wandb logging dont use
 
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
